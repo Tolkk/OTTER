@@ -3,9 +3,8 @@
 #include <iostream>
 #include <fstream> //03
 #include <string> //03
-#include <GLM/glm.hpp> //04
-#include <GLM/gtc/matrix_transform.hpp> //04
-
+#include <GLM/glm.hpp>//04
+#include <GLM/gtc/matrix_transform.hpp>//04
 
 GLFWwindow* window;
 
@@ -16,7 +15,7 @@ bool initGLFW() {
 	}
 
 	//Create a new GLFW window
-	window = glfwCreateWindow(800, 800, "INFR1350U", nullptr, nullptr);
+	window = glfwCreateWindow(800, 800, "INFR1350U-TreytonCowell-100745472", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 
 	return true;
@@ -77,15 +76,17 @@ bool loadShaders() {
 	return true;
 }
 
-//Lecture 04
-GLfloat rotY = 0.0f;//rotate y
+
+// Lecture 4
+GLfloat rotateY = 0.0f;
 
 void keyboard() {
-	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-		rotY += 0.01;
-	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-		rotY -= 0.01;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		rotateY += 0.2;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		rotateY -= 0.2;
 }
+
 
 int main() {
 	//Initialize GLFW
@@ -100,8 +101,8 @@ int main() {
 
 	static const GLfloat points[] = {
 		-0.5f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		0.5f, 0.5f, 0.0f
+		 0.5f, -0.5f, 0.0f,
+		0.0f,  0.5f, 0.0f
 	};
 
 	static const GLfloat colors[] = {
@@ -137,34 +138,35 @@ int main() {
 	if (!loadShaders())
 		return 1;
 
-	//Lecture 4 start//
-	// Proj Matrix - 45 degrees Field of View (FoV), ratio, range 0.1 - 100 units
+	////////// Lecture 04 Starts Here /////////
+
+	//Projection matrix - 45 degrees FoV, ratio, range 0.1 - 100 units
 	int width, height;
 	glfwGetWindowSize(window, &width, &height);
+
 	glm::mat4 Projection = glm::perspective(glm::radians(45.0f),
-		(float)width / (float)height, 0.1f, 100.0f);
+		(float)width / (float)height, 0.1f, 100.f);
 
-	//camera
+	// Camera
 	glm::mat4 View = glm::lookAt(
-		glm::vec3(0, 0, 3), //camera position
-		glm::vec3(0, 0, 0), //camera looks at origin
-		glm::vec3(0, 1, 0) //up vector
-		);
+		glm::vec3(0, 0, 3), // Camera position
+		glm::vec3(0, 0, 0), // Camera looks at the origin
+		glm::vec3(0, 1, 0) // Up vector
+	);
 
-
-	//model matrix
-	glm::mat4 Model = glm::mat4(1.0f); //reset matrix
+	// Model matrix
+	glm::mat4 Model = glm::mat4(1.0f); //Identity Matrix used to reset the matrix
 
 	Model = glm::translate(Model, glm::vec3(0.0f, 0.0f, 0.0f));
-	Model = glm::rotate(Model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	Model = glm::rotate(Model, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 0.5f));
 	Model = glm::scale(Model, glm::vec3(1.0f, 1.0f, 1.0f));
 
-	//T * R * S <--- from the right (scale first, then rotate, than translate)
+	// T * R * S <-- from the right
 
 	glm::mat4 mvp = Projection * View * Model;
 
-	// handle for our mvp matrix (uniform variable)
-	GLint MatrixID = glGetUniformLocation(shader_program, "MVP");
+	//Handle for our mvp matrix (uniform variable)
+	GLuint MatrixID = glGetUniformLocation(shader_program, "MVP");
 
 
 
@@ -173,10 +175,10 @@ int main() {
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-	// Face culling
+	//// Face culling
 	//glEnable(GL_CULL_FACE);
 	//glFrontFace(GL_CCW);
-	//glCullFace(GL_BACK);
+	//glCullFace(GL_FRONT);
 
 
 	///// Game loop /////
@@ -188,11 +190,18 @@ int main() {
 
 		glUseProgram(shader_program);
 
-		//Lecture 04 here
-		Model = glm::rotate(Model, glm::radians(0.01f), glm::vec3(0.0f, 1.0f, 0.0f));
+		//Lecture 4 
+		Model = glm::mat4(1.0f);
+		keyboard();
+		Model = glm::translate(Model, glm::vec3(0.0f, 0.5f, 0.0f));
+		Model = glm::rotate(Model, glm::radians(rotateY), glm::vec3(0.0f, 0.0f, 1.0f));
+		Model = glm::translate(Model, glm::vec3(0.0f, -0.5f, 0.0f));
+		
 		mvp = Projection * View * Model;
 
-		//send mvp matrix to GPU
+
+		//Send mvp matrix to GPU
+
 		glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &mvp[0][0]);
 
 		glDrawArrays(GL_TRIANGLES, 0, 3);
